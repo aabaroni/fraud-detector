@@ -1,3 +1,22 @@
+
+## modelling
+#Modelling pipeline for fraud detection.
+#
+#Different candidate models will be assessed for this:
+#- logistic regression (which will constitute our baseline)
+#- gradient boosting
+#- random forest
+#- catboost?
+#
+#The models will be built offline and locally, to take advantage of the sklearn library. Modelling functionality in Spark is steadily expanding, hence it is recommended to consider moving this part of the process to Spark for easier integration - see https://spark.apache.org/docs/latest/ml-guide.html
+#
+#Due to constrained timelines of this exercise, models will be fitted on a random sample (see "Data read in" paragraph).
+
+# TODO
+#Update features based on any changes to eda + consider enlarging preprocessing e.g. bucketizer
+#Add commentary on why features/models
+#Bring preprocessing step forward so it is not repeated in various models and reduce runtime
+
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -24,7 +43,7 @@ import joblib
 ###############################
 #TODO: make configurable
 sampleRate = 0.1
-raw = pd.read_csv("../data/input_data.csv")
+raw = pd.read_csv("../data/input_data.csv").drop(columns = ["isFlaggedFraud"])
 raw_sampled = pd.DataFrame.sample(raw, frac = sampleRate)
 
 ###############################
@@ -118,7 +137,7 @@ for i in range(len(all_features)):
 
        features = all_features[:i + 1]
 
-       print(len(features))
+       print(str(len(features)), " features: ", features)
 
        preprocessing = ColumnTransformer(transformers=[
               ('bin', binary_transformer, [X_train.columns.get_loc(x) for x in features if x in binary_features]),
@@ -162,52 +181,3 @@ for i in range(len(all_features)):
 
        print(f"{len(features)} done")
 
-###############################
-# Evaluation
-###############################
-for i in range(len(all_features)):
-       lr = joblib.load(f'../models/logisticRegression_{i + 1}.pkl')
-       rf = joblib.load(f'../models/randomForest_{i + 1}.pkl')
-       gb = joblib.load(f'../models/gradientBoosting_{i + 1}.pkl')
-
-       features = all_features[:i + 1]
-       print("Iteration " + i + ", features: ", features)
-
-       # roc auc - train data
-       lr_roc_auc_score_train = roc_auc_score(y_train, lr.predict_proba(X_train)[:, 1])
-       gb_roc_auc_score_train = roc_auc_score(y_train, gb.predict_proba(X_train)[:, 1])
-       rf_roc_auc_score_train = roc_auc_score(y_train, rf.predict_proba(X_train)[:, 1])
-       roc_auc_train_df.loc[len(roc_auc_test_df)] = [
-              i + 1, lr_roc_auc_score_train, rf_roc_auc_score_train, gb_roc_auc_score_train
-       ]
-
-       # roc auc - test data
-       lr_roc_auc_score_test = roc_auc_score(y_test, lr.predict_proba(X_test)[:, 1])
-       gb_roc_auc_score_test = roc_auc_score(y_test, gb.predict_proba(X_test)[:, 1])
-       rf_roc_auc_score_test = roc_auc_score(y_test, rf.predict_proba(X_test)[:, 1])
-       roc_auc_test_df.loc[len(roc_auc_test_df)] = [
-              i + 1, lr_roc_auc_score_test, rf_roc_auc_score_test, gb_roc_auc_score_test
-       ]
-
-roc_auc_train_df
-roc_auc_train_df[[col for col in roc_auc_train_df.columns if col not in ['features']]].plot();
-roc_auc_test_df[[col for col in roc_auc_test_df.columns if col not in ['features']]].plot();
-
-roc_auc_test_df['gb_diff'] = roc_auc_test_df['gradient_boosting'] - roc_auc_test_df['gradient_boosting'].shift(1)
-roc_auc_test_df['rf_diff'] = roc_auc_test_df['random_forest'] - roc_auc_test_df['random_forest'].shift(1)
-roc_auc_test_df[['features', 'gradient_boosting', 'random_forest', 'gb_diff', 'rf_diff']]
-
-# Compare roa_auc on train vs test set
-plt.plot(roc_auc_test_df['random_forest'], label = 'test');
-plt.plot(roc_auc_train_df['random_forest'], label = 'train');
-plt.legend(loc = 'best');
-plt.title('random_forest');
-
-###############################
-# Choosing the desired model
-###############################
-#model_chosen = 'randomForest_4'
-#model = joblib.load(f'../models/{model_chosen}.pkl')
-#y_test_pred = model.predict(X_test)
-#y_test_pred_proba = model.predict_proba(X_test)
-#y_test_pred_proba_posit = y_test_pred_proba[:, 1]

@@ -5,3 +5,6 @@ models/
 
 .idea/
 .ipynb_checkpoints/
+*.DS_Store
+*__pycache__/
+aab_COMMENTS.txt
