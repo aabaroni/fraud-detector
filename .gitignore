@@ -1,0 +1,7 @@
+data/
+logs/
+reports/
+models/
+
+.idea/
+.ipynb_checkpoints/
