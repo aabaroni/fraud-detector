@@ -13,10 +13,15 @@ sys.path.insert(0, '../fraud-detector/')
 sys.path.insert(0, '../data')
 sys.path.insert(0, '../')
 
+import numpy as np
 import conf.scoring_conf as conf
 from utils import load_data_local
 from feateng import FeatPipeline
 import joblib
+import requests
+from typing import List
+from datetime import datetime
+
 
 ###############################
 # 0. Variable Assignment
@@ -25,6 +30,7 @@ import joblib
 inpath = conf.toscore_inpath # input path of data to be scored
 intype = conf.toscore_intype # input path type of data to be scored
 model_chosen = conf.model_chosen
+outpath = conf.output_location_api_tagged
 
 ###############################
 # 1. Data read
@@ -78,47 +84,89 @@ def index():
 
 
 @app.post('/predict')
-def predict_fraud(data: Transaction):
-    data = data.dict()
-    amount = data['amount']
-    isDestBalanceNewZero = data['isDestBalanceNewZero']
-    isDestBalanceOldZero = data['isDestBalanceOldZero']
-    isDestMerchant = data['isDestMerchant']
-    isOrigBalanceNewZero  = data['isOrigBalanceNewZero']
-    isOrigBalanceOldZero = data['isOrigBalanceOldZero']
-    newbalanceDest = data['newbalanceDest']
-    newbalanceOrig = data['newbalanceOrig']
-    oldbalanceDest = data['oldbalanceDest']
-    oldbalanceOrg = data['oldbalanceOrg']
-    step = data['step']
-    stepDay = data['stepDay']
-    stepHour = data['stepHour']
-    stepWeekDay = data['stepWeekDay']
-    type = data['type']
+def predict_fraud(input_data: List[Transaction]):
 
-    prediction = classifier.predict([[amount
-                                    , isDestBalanceNewZero
-                                    , isDestBalanceOldZero
-                                    , isDestMerchant
-                                    , isOrigBalanceNewZero
-                                    , isOrigBalanceOldZero
-                                    , newbalanceDest
-                                    , newbalanceOrig
-                                    , oldbalanceDest
-                                    , oldbalanceOrg
-                                    , step
-                                    , stepDay
-                                    , stepHour
-                                    , stepWeekDay
-                                    , type]])
-    if (prediction == 1):
-        prediction = "Fraud"
-    else:
-        prediction = "Not Fraud"
+    list_results = []
+    df = pd.DataFrame(input_data)
+    df.columns = ['amount','isDestBalanceNewZero','isDestBalanceOldZero','isDestMerchant','isOrigBalanceNewZero','isOrigBalanceOldZero','newbalanceDest','newbalanceOrig','oldbalanceDest','oldbalanceOrg','step','stepDay','stepHour','stepWeekDay','type']
+    df["apiTagged"] = ""
+
+    for i in range(len(input_data)):
+        data = input_data[i].dict()
+
+        amount = data['amount']
+        isDestBalanceNewZero = data['isDestBalanceNewZero']
+        isDestBalanceOldZero = data['isDestBalanceOldZero']
+        isDestMerchant = data['isDestMerchant']
+        isOrigBalanceNewZero  = data['isOrigBalanceNewZero']
+        isOrigBalanceOldZero = data['isOrigBalanceOldZero']
+        newbalanceDest = data['newbalanceDest']
+        newbalanceOrig = data['newbalanceOrig']
+        oldbalanceDest = data['oldbalanceDest']
+        oldbalanceOrg = data['oldbalanceOrg']
+        step = data['step']
+        stepDay = data['stepDay']
+        stepHour = data['stepHour']
+        stepWeekDay = data['stepWeekDay']
+        type = data['type']
+
+        prediction = classifier.predict([[amount
+                                        , isDestBalanceNewZero
+                                        , isDestBalanceOldZero
+                                        , isDestMerchant
+                                        , isOrigBalanceNewZero
+                                        , isOrigBalanceOldZero
+                                        , newbalanceDest
+                                        , newbalanceOrig
+                                        , oldbalanceDest
+                                        , oldbalanceOrg
+                                        , step
+                                        , stepDay
+                                        , stepHour
+                                        , stepWeekDay
+                                        , type]])
+
+        if (prediction == 1):
+            prediction = "Fraud"
+        else:
+            prediction = "Not Fraud"
+
+        list_results.append(prediction)
+        df["apiTagged"][i] = prediction
+
+    now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+    df.to_csv(outpath + "/api_tagged_" + now + ".csv")
     return {
-        'prediction': prediction
+        'Predictions (also saved in data folder)': list_results
     }
 
+
+############
+## METHOD 2
+############
+#class RequestBody(BaseModel):
+#    samples: List[str]
+
+#    def to_array(self):
+#        return [sample.text for sample in self.samples]
+
+
+##@app.post("/predict2")
+##def predict(body: RequestBody):
+##    data = np.array(body.to_array())
+##
+##    probas = classifier.predict_proba(data)
+##    predictions = classifier.predict(data)
+##
+##    return {
+##        "predictions": (
+##            np.tile(classifier.classes_, (len(predictions), 1))[
+##                np.arange(len(predictions)), predictions
+##            ].tolist()
+##        ),
+##        "probabilities": probas[np.arange(len(predictions)), predictions].tolist(),
+##    }
+##
 
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=8000)
