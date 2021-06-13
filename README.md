@@ -44,6 +44,8 @@ fraud-detector
 
 
 ## TODOs and feature release backlog
-- Add requirements.txt
+- Feed business knowledge into model e.g. what is the cost to the business of False Negative / False Positives 
 - Model training and optimisation, considering more extensive feature engineering and broader range of classifiers (e.g.: catboost) 
+- Enhance feature selection, e.g.: look at feature importance and prioritise ordering used for variable selection
 - Low level function and code documentation
+- Add requirements.txt
