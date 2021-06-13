@@ -1,3 +1,6 @@
+######################################################################
+# Scoring pipeline, not used directly but inspired api/app.py
+######################################################################
 
 
 import conf.modelling as conf
@@ -31,9 +34,11 @@ def main():
     ###############################
     # 3. Scoring
     ###############################
-    model = joblib.load(model_chosen) + "pkl"
-    predictions = predict(df[all_features])
-    prediction_prob = predict_proba(df[all_features])[:, 1]
+    model = joblib.load(model_chosen) + ".pkl"
+    predictions = model.predict(df[all_features])
+    prediction_prob = model.predict_proba(df[all_features])[:, 1]
+
+    return predictions, prediction_prob
 
 
 

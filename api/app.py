@@ -1,3 +1,10 @@
+######################################################################
+# Code for fastapi app, 2 predictor apps:
+# - "predict": Reads in chosen classifier, and a sample of records in json format and scores them one by one
+# - "predict_automation": Reads in chosen classifier, and creates prediction given specified input data paths.
+#                         Called by api scorer for stream scoring.
+######################################################################
+
 import pandas as pd
 from joblib import dump
 import uvicorn
@@ -21,7 +28,6 @@ import joblib
 import requests
 from typing import List
 from datetime import datetime
-import conf.modelling as modelling_conf
 
 ###############################
 # 0. Variable Assignment
@@ -140,15 +146,13 @@ def predict_fraud(input_data: List[Transaction]):
         'Predictions (also saved in data folder)': list_results
     }
 
-
-
 @app.post('/predict_automation')
 def predict_automation(files_to_process:List[str]):
 
     from conf.modelling import target_feature, id_features
-
+    from conf.automation import landing_path_input_data, landing_path_output_data
     # append transactions
-    input_data = pd.concat([pd.read_csv("../data/automation_in/" + f) for f in files_to_process], ignore_index=True, sort=False).drop(columns = ["isFlaggedFraud"])
+    input_data = pd.concat([pd.read_csv(landing_path_input_data + "/" + f) for f in files_to_process], ignore_index=True, sort=False).drop(columns = ["isFlaggedFraud"])
     all_features = df.columns.difference(target_feature).difference(id_features)
 
     # apply feature engineering
@@ -159,12 +163,10 @@ def predict_automation(files_to_process:List[str]):
     engineered['pred_proba_fraud'] = classifier.predict_proba(engineered[all_features])[:, 1]
 
     now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-    engineered.to_csv("../data/automation_out/api_tagged_" + now + ".csv", index=False)
+    engineered.to_csv(landing_path_output_data + "/api_tagged_" + now + ".csv", index=False)
     return {
-        "Predictions saved in data/automation_out/api_tagged_" + now + ".csv"
+        "Predictions saved in " + landing_path_output_data + "/api_tagged_" + now + ".csv"
     }
-
-
 
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=8000)

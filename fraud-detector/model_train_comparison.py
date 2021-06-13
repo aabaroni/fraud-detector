@@ -1,21 +1,29 @@
+######################################################################
+# Model training pipeline for fraud detection, key highlights:
+# - Different candidate models will be trained and assessed for this:
+#  > logistic regression
+#  > gradient boosting
+#  > random forest
+#  > catboost? (planned for future release)
+# - The models will be built offline and locally, to take advantage of the sklearn library.
+# - Pipeline of feature engineering, data splitting, preproccessing is applied before fitting.
+# - Model fitting and hyperparameter optimization with randomised search.
+# - Models are trained on increasing number of features, for variable selection purposes
 
-## modelling
-#Modelling pipeline for fraud detection.
-#
-#Different candidate models will be assessed for this:
-#- logistic regression (which will constitute our baseline)
-#- gradient boosting
-#- random forest
-#- catboost?
-#
-#The models will be built offline and locally, to take advantage of the sklearn library. Modelling functionality in Spark is steadily expanding, hence it is recommended to consider moving this part of the process to Spark for easier integration - see https://spark.apache.org/docs/latest/ml-guide.html
-#
-#Due to constrained timelines of this exercise, models will be fitted on a random sample (see "Data read in" paragraph).
+
+# Other considerations:
+# - Modelling functionality in Spark is steadily expanding, hence might move to PySpark in the future if more processing was required.
+#   See https://spark.apache.org/docs/latest/ml-guide.html
+# - Due to constrained timelines of this exercise, models were fitted on a random 10% sample as per configuration.
 
 # TODO
-#Update features based on any changes to eda + consider enlarging preprocessing e.g. bucketizer
-#Add commentary on why features/models
-#Bring preprocessing step forward so it is not repeated in various models and reduce runtime
+# Look at feature importance and prioritise ordering used for variable selection
+# Consider adding more types of classifiers such as catboost
+# Update features based on any changes to eda + consider enlarging preprocessing e.g. bucketizer
+# Bring preprocessing step forward so it is not repeated in various models and reduce runtime
+
+
+######################################################################
 
 import pandas as pd
 import numpy as np
@@ -36,15 +44,14 @@ from sklearn.model_selection import cross_val_score, RandomizedSearchCV
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 import joblib
+from conf.modelling import sample_rate, inpath
 
 
 ###############################
 # Variable Assignment and data read in
 ###############################
-#TODO: make configurable
-sampleRate = 0.1
-raw = pd.read_csv("../data/input_data.csv").drop(columns = ["isFlaggedFraud"])
-raw_sampled = pd.DataFrame.sample(raw, frac = sampleRate)
+raw = load_data_local(inpath, intype).drop(columns = ["isFlaggedFraud"])
+raw_sampled = pd.DataFrame.sample(raw, frac = sample_rate)
 
 ###############################
 # Feature engineering step
@@ -55,14 +62,8 @@ print("Debugging log - FE step complete:", df.head())
 ###############################
 # More variable Assignment
 ###############################
-#TODO: make configurable
-target_feature = ["isFraud"]
-id_features = ['nameDest', 'nameOrig']
+from conf.modelling import target_feature, id_features, numeric_features, categorical_features, binary_features
 all_features = df.columns.difference(target_feature).difference(id_features)
-numeric_features = ['amount', 'newbalanceDest',
-       'newbalanceOrig', 'oldbalanceDest', 'oldbalanceOrg', 'step', ]
-categorical_features = ['stepDay', 'stepHour', 'type']
-binary_features = ['isDestMerchant']
 other_features = all_features.difference(numeric_features).difference(categorical_features).difference(binary_features)
 
 ###############################
@@ -101,6 +102,10 @@ numeric_transformer = Pipeline(steps = [
 ])
 
 
+###############################
+# Search space for hyperparameter optimization
+# Volume to be searched where each dimension represents a hyperparameter and each point represents one model configuration.
+###############################
 # Commenting out some of the below to reduce runtime, can be augmented
 lrSearchSpace = {
     'classifier': [LogisticRegression(n_jobs = -1, solver = 'saga')],
@@ -128,7 +133,8 @@ gbSearchSpace = {
 }
 
 ###############################
-# Model fitting and variable selection pipeline
+# Model fitting and hyperparameter optimization with randomised search.
+# Also models are training on increasing number of features, for variable selection purposes
 ###############################
 print("Training models on a increasing number of features. Total features:", len(all_features))
 

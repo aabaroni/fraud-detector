@@ -1,3 +1,6 @@
+######################################################################
+# Configuration for fraud-detector/scoring_pipeline.py and predict_automation in api/app.py
+######################################################################
 
 inpath = "../data/input_data.csv"
 intype = "csv"

@@ -1,19 +1,20 @@
-###################################
+######################################################################
 # Accumulator job scans for any new transactions in the
 # target folder and processes at a specified interval
-###################################
+######################################################################
 
 import os
 from datetime import datetime
 from api_scorer import score_api
 import time
+from conf.automation import landing_path_input_data
 
 # scan frequency
 scan_freq_seconds = 1
 
 # initial file scan
 files_earlier = []
-files_now = os.listdir("../data/automation_in")
+files_now = os.listdir(landing_path_input_data)
 
 # Infinite loop, will continue until user types ctrl-C to quit the application
 while True:
@@ -29,5 +30,5 @@ while True:
         # call api with new file
         score_api(to_process)
 
-    files_now = os.listdir("../data/automation_in")
+    files_now = os.listdir(landing_path_input_data)
     time.sleep(scan_freq_seconds)

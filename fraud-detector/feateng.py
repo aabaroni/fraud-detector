@@ -1,3 +1,6 @@
+######################################################################
+# Feature engineering pipeline, creates new features based on input data
+######################################################################
 
 import pandas as pd
 import numpy as np

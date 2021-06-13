@@ -1,5 +1,8 @@
 today=`date +%Y-%m-%d.%H.%M.%S`
 
+mkdir -p ../data/automation_in/  # Create automation_in folder if not exist  # UPDATE WITH DESIRED LOCATION
+mkdir -p ../data/automation_out/ # Create automation_out folder if not exist # UPDATE WITH DESIRED LOCATION
+
 echo "Starting up fastapi application in the background. Give it a few seconds.."
 # kill all processes on port 8000 to start fresh:
 lsof -ti:8000 | xargs kill -9

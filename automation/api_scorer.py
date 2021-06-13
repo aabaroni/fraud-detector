@@ -1,6 +1,8 @@
+######################################################################
+# Scores a list of input files using fastapi
+######################################################################
 import requests
 import json5
-
 
 def score_api(file_list:list):
 
