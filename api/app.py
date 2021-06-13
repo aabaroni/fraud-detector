@@ -14,14 +14,14 @@ sys.path.insert(0, '../data')
 sys.path.insert(0, '../')
 
 import numpy as np
-import conf.scoring_conf as conf
+import conf.api as conf
 from utils import load_data_local
 from feateng import FeatPipeline
 import joblib
 import requests
 from typing import List
 from datetime import datetime
-
+import conf.modelling as modelling_conf
 
 ###############################
 # 0. Variable Assignment
@@ -141,32 +141,30 @@ def predict_fraud(input_data: List[Transaction]):
     }
 
 
-############
-## METHOD 2
-############
-#class RequestBody(BaseModel):
-#    samples: List[str]
 
-#    def to_array(self):
-#        return [sample.text for sample in self.samples]
+@app.post('/predict_automation')
+def predict_automation(files_to_process:List[str]):
+
+    from conf.modelling import target_feature, id_features
+
+    # append transactions
+    input_data = pd.concat([pd.read_csv("../data/automation_in/" + f) for f in files_to_process], ignore_index=True, sort=False).drop(columns = ["isFlaggedFraud"])
+    all_features = df.columns.difference(target_feature).difference(id_features)
+
+    # apply feature engineering
+    engineered = FeatPipeline.fit_transform(input_data)
+
+    # generate predictions
+    engineered['pred_fraud'] = classifier.predict(engineered[all_features])
+    engineered['pred_proba_fraud'] = classifier.predict_proba(engineered[all_features])[:, 1]
+
+    now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+    engineered.to_csv("../data/automation_out/api_tagged_" + now + ".csv", index=False)
+    return {
+        "Predictions saved in data/automation_out/api_tagged_" + now + ".csv"
+    }
 
 
-##@app.post("/predict2")
-##def predict(body: RequestBody):
-##    data = np.array(body.to_array())
-##
-##    probas = classifier.predict_proba(data)
-##    predictions = classifier.predict(data)
-##
-##    return {
-##        "predictions": (
-##            np.tile(classifier.classes_, (len(predictions), 1))[
-##                np.arange(len(predictions)), predictions
-##            ].tolist()
-##        ),
-##        "probabilities": probas[np.arange(len(predictions)), predictions].tolist(),
-##    }
-##
 
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=8000)

@@ -4,7 +4,7 @@ toscore_intype = "csv"
 
 # Model chosen - Fill after training the models
 model_chosen = "../models/gradientBoosting_4"
-features_used = ['amount', 'isDestBalanceNewZero', 'isDestBalanceOldZero','isDestMerchant']
+
 
 # Output location
 output_location_api_tagged = "../data/"

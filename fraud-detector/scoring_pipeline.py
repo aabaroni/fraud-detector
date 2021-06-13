@@ -1,10 +1,10 @@
 
 
-import conf.conf as conf
+import conf.modelling as conf
 from utils import load_data_local
 from feateng import FeatPipeline
 import joblib
-
+from conf.modelling import target_feature, id_features
 
 def main():
 
@@ -16,12 +16,12 @@ def main():
     inpath = conf.inpath # input path of data to be scored
     intype = conf.intype # input path type of data to be scored
     model_chosen = conf.model_chosen
-    features_used = conf.features_used
 
     ###############################
     # 1. Data read
     ###############################
-    df = load_data_local(inpath, intype)[features_used]
+    df = load_data_local(inpath, intype)
+    all_features = df.columns.difference(target_feature).difference(id_features)
 
     ###############################
     # 2. Feature engineering pipeline
@@ -32,8 +32,8 @@ def main():
     # 3. Scoring
     ###############################
     model = joblib.load(model_chosen) + "pkl"
-    #predictions = predict(df)
-    #prediction_prob = predict_proba(df)[:, 1]
+    predictions = predict(df[all_features])
+    prediction_prob = predict_proba(df[all_features])[:, 1]
 
 
 
