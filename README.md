@@ -1,6 +1,14 @@
 # fraud-detector
 Fraud detector is a package for detecting fraud in transactions.
 
+## Business context 
+As a financial institution, it is important that fraudulent transactions are blocked to avoid losses (fraud refunds etc.),but even more importantly to maintain the trust of customers and good reputation in the market.  
+Based on the 1 month sample used, about 0.1% of transactions are marked as fraudulent, representing circa 1% of transaction value. 
+> ###User stories  
+>  - As a member of the fraud prevention team, I want a system that flags any suspicious transactions in real time
+>  - The system needs to be scalable in production, handling an amount of transactions 20x bigger than the data provided, i.e. circa 4Mln daily transactions 
+
+
 ## Architecture
 For current architecture and considerations on road to production, see [here](docs/architecture.md)
 
