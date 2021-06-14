@@ -51,7 +51,7 @@ fraud-detector
 ```
 
 
-## TODOs and feature release backlog
+#### TODOs and feature release backlog
 - Feed business knowledge into model e.g. what is the cost to the business of False Negative / False Positives 
 - Model training and optimisation, considering more extensive feature engineering and broader range of classifiers (e.g.: catboost) 
 - Enhance feature selection, e.g.: look at feature importance and prioritise ordering used for variable selection
