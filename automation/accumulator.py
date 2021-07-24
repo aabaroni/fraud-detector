@@ -7,6 +7,11 @@ import os
 from datetime import datetime
 from api_scorer import score_api
 import time
+import sys
+sys.path.insert(0, '../fraud-detector/')
+sys.path.insert(0, '../data')
+sys.path.insert(0, '../')
+
 from conf.automation import landing_path_input_data
 
 # scan frequency
